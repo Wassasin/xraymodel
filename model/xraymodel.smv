@@ -206,3 +206,28 @@ MODULE main
                                 (i.signal = LowBothOff -> low_mode = Sequential & low_direction = Both) 
                         );
 
+        -- General requirement 1
+        LTLSPEC G (o.mode in {Sequential, Single} -> O i.signal in {StartSeqHigh, StartOneHigh, LowFrontOn, LowSideOn, LowBothOn})
+        -- General requirement 2 TODO (errors)
+        -- General requirement 3 TODO
+        -- General requirement 4
+        LTLSPEC G (
+                !(
+                        (
+                                o.mode = Off &
+                                O (
+                                        o.dose = High & o.mode in {Sequential, Single} &
+                                        O (
+                                                i.signal = LowFrontOff &
+                                                O (
+                                                        i.signal = LowFrontOn &
+                                                        O ( o.dose = High & o.mode in {Sequential, Single} )
+                                                )
+                                        )
+                                )
+                        ) -> (
+                                F o.dose = Low & o.mode in {Sequential, Single}
+                        )
+                )
+        )
+
