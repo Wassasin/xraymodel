@@ -165,7 +165,7 @@ MODULE main
                                                 )
                                         )
                                 ) &
-                                (instr = LowFrontOff -> high_mode != Off | o.mode = Off) &
+                                (instr = LowFrontOff -> low_mode = Off & (high_mode != Off | o.mode = Off)) &
                                 (instr = LowSideOn -> 
                                         low_mode = Sequential &
                                         low_direction = Side & (
@@ -176,7 +176,7 @@ MODULE main
                                                 )
                                         )
                                 ) &
-                                (instr = LowSideOff -> high_mode != Off | o.mode = Off) &
+                                (instr = LowSideOff -> low_mode = Off & (high_mode != Off | o.mode = Off)) &
                                 (instr = LowBothOn -> 
                                         low_mode = Sequential &
                                         low_direction = Both & (
@@ -187,7 +187,7 @@ MODULE main
                                                 )
                                         )
                                 ) &
-                                (instr = LowBothOff -> high_mode != Off | o.mode = Off)
+                                (instr = LowBothOff -> low_mode = Off & (high_mode != Off | o.mode = Off))
                         );
                         
                         signal_valid := (
@@ -205,29 +205,33 @@ MODULE main
                                 (i.signal = LowBothOn -> low_mode = Off) &
                                 (i.signal = LowBothOff -> low_mode = Sequential & low_direction = Both) 
                         );
+                        
+                        dose_no := o.mode = Off;
+                        dose_low := o.dose = Low & o.mode = Sequential;
+                        dose_high := o.dose = High & o.mode in {Sequential, Single};
+                        low_signal := i.signal in {LowFrontOn, LowSideOn, LowBothOn};
 
         -- General requirement 1
         LTLSPEC G (o.mode in {Sequential, Single} -> O i.signal in {StartSeqHigh, StartOneHigh, LowFrontOn, LowSideOn, LowBothOn})
         -- General requirement 2 TODO (errors)
         -- General requirement 3 TODO
         -- General requirement 4
-        LTLSPEC G (
-                !(
-                        (
-                                o.mode = Off &
-                                O (
-                                        o.dose = High & o.mode in {Sequential, Single} &
-                                        O (
-                                                i.signal = LowFrontOff &
-                                                O (
-                                                        i.signal = LowFrontOn &
-                                                        O ( o.dose = High & o.mode in {Sequential, Single} )
-                                                )
-                                        )
-                                )
-                        ) -> (
-                                F o.dose = Low & o.mode in {Sequential, Single}
-                        )
-                )
-        )
 
+	LTLSPEC ! F (
+		dose_no &
+		dose_no U (
+			( dose_high & !low_signal ) &
+			( dose_high & !low_signal ) U (
+				( dose_high & i.signal = LowFrontOn ) &
+				( dose_high & i.signal = LowFrontOn ) U (
+					( dose_high & !low_signal ) &
+					( dose_high & !low_signal ) U (
+						( dose_high & i.signal = LowFrontOff ) &
+						( dose_high & i.signal = LowFrontOff ) U (
+							( dose_high & !low_signal ) &
+							( dose_high & !low_signal ) U (
+								( !dose_high & !low_signal) &		-- low dose or no dose
+								( !dose_high & !low_signal) U (
+									dose_low
+	))))))))
+	
