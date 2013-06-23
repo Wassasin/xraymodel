@@ -1,222 +1,222 @@
 MODULE input
-        VAR
-                signal : {SelectXPlane, PrepSeqHigh, StartSeqHigh, StopSeqHigh, UnprepSeqHigh, StartOneHigh, StopOneHigh, LowFrontOn, LowFrontOff, LowSideOn, LowSideOff, LowBothOn, LowBothOff, Null};
-        ASSIGN
-                init(signal) := Null;
-                
+	VAR
+		signal : {SelectXPlane, PrepSeqHigh, StartSeqHigh, StopSeqHigh, UnprepSeqHigh, StartOneHigh, StopOneHigh, LowFrontOn, LowFrontOff, LowSideOn, LowSideOff, LowBothOn, LowBothOff, Null};
+	ASSIGN
+		init(signal) := Null;
+
 MODULE output
-        VAR
-                mode : {Sequential, Single, Off};
-                direction : {Front, Side, Both};
-                dose : {Low, High};
-                prepared : boolean;
-        ASSIGN
-                init(mode) := Off;
-                init(direction) := Front;
-                init(dose) := Low;
-                init(prepared) := FALSE;
+	VAR
+		mode : {Sequential, Single, Off};
+		direction : {Front, Side, Both};
+		dose : {Low, High};
+		prepared : boolean;
+	ASSIGN
+		init(mode) := Off;
+		init(direction) := Front;
+		init(dose) := Low;
+		init(prepared) := FALSE;
 
 MODULE main
-                VAR
-                        i : input;
-                        o : output;
-                        -- AANNAME: PrepSeqHigh heeft dubbelrol voor zowel Sequential en Single
-                        instr : {SelectFrontPlane, SelectSidePlane, SelectBothPlane, PrepSeqHigh, StartSeqHigh, StopSeqHigh, UnprepSeqHigh, StartOneHigh, StopOneHigh, LowFrontOn, LowFrontOff, LowSideOn, LowSideOff, LowBothOn, LowBothOff, Null};
-                                
-                        next_direction : {Front, Side, Both};
-                
-                        low_direction : {Front, Side, Both};
-                        high_direction : {Front, Side, Both};
-                        low_mode : {Sequential, Off};
-                        high_mode : {Sequential, Single, Off};
-                ASSIGN
-                        init(instr) := Null;
-                        init(next_direction) := Front;
-                        init(low_direction) := Front;
-                        init(high_direction) := Front;
-                        init(low_mode) := Off;
-                        init(high_mode) := Off;
-                
-                        next(i.signal) := case
-                                i.signal = Null & instr = Null : {SelectXPlane, PrepSeqHigh, StartSeqHigh, StopSeqHigh, UnprepSeqHigh, StartOneHigh, StopOneHigh, LowFrontOn, LowFrontOff, LowSideOn, LowSideOff, LowBothOn, LowBothOff, Null};
-                                instr = Null & !signal_valid : Null; -- throw away invalid signal
-                                instr != Null : Null;
-                                TRUE : i.signal;
-                        esac;
+	VAR
+		i : input;
+		o : output;
+		-- AANNAME: PrepSeqHigh heeft dubbelrol voor zowel Sequential en Single
+		instr : {SelectFrontPlane, SelectSidePlane, SelectBothPlane, PrepSeqHigh, StartSeqHigh, StopSeqHigh, UnprepSeqHigh, StartOneHigh, StopOneHigh, LowFrontOn, LowFrontOff, LowSideOn, LowSideOff, LowBothOn, LowBothOff, Null};
 
-                        next(instr) := case
-                                done : Null;
-                                resolved : instr;
-                                !signal_valid : instr;
-                                i.signal = Null : instr;
-                                i.signal = SelectXPlane & next_direction = Front : SelectSidePlane;
-                                i.signal = SelectXPlane & next_direction = Side : SelectBothPlane;
-                                i.signal = SelectXPlane & next_direction = Both : SelectFrontPlane;
-                                i.signal = PrepSeqHigh : PrepSeqHigh;
-                                i.signal = StartSeqHigh : StartSeqHigh;
-                                i.signal = StopSeqHigh : StopSeqHigh;
-                                i.signal = UnprepSeqHigh : UnprepSeqHigh;
-                                i.signal = StartOneHigh : StartOneHigh;
-                                i.signal = StopOneHigh : StopOneHigh;
-                                i.signal = LowFrontOn : LowFrontOn;
-                                i.signal = LowFrontOff : LowFrontOff;
-                                i.signal = LowSideOn : LowSideOn;
-                                i.signal = LowSideOff : LowSideOff;
-                                i.signal = LowBothOn : LowBothOn;
-                                i.signal = LowBothOff : LowBothOff;
-                        esac;
+		next_direction : {Front, Side, Both};
 
-                        next(next_direction) := case
-                                !resolved : next_direction; -- Do nothing while instr is not resolved
-                                instr = SelectSidePlane : Side;
-                                instr = SelectBothPlane : Both;
-                                instr = SelectFrontPlane : Front;
-                                TRUE : next_direction;
-                        esac;
+		low_direction : {Front, Side, Both};
+		high_direction : {Front, Side, Both};
+		low_mode : {Sequential, Off};
+		high_mode : {Sequential, Single, Off};
+	ASSIGN
+		init(instr) := Null;
+		init(next_direction) := Front;
+		init(low_direction) := Front;
+		init(high_direction) := Front;
+		init(low_mode) := Off;
+		init(high_mode) := Off;
 
-                        next(low_direction) := case
-                                !resolved : low_direction;
-                                instr = LowFrontOn & low_mode = Off : Front;
-                                instr = LowSideOn & low_mode = Off : Side;
-                                instr = LowBothOn & low_mode = Off : Both;
-                                TRUE : low_direction;
-                        esac;
+		next(i.signal) := case
+				i.signal = Null & instr = Null : {SelectXPlane, PrepSeqHigh, StartSeqHigh, StopSeqHigh, UnprepSeqHigh, StartOneHigh, StopOneHigh, LowFrontOn, LowFrontOff, LowSideOn, LowSideOff, LowBothOn, LowBothOff, Null};
+				instr = Null & !signal_valid : Null; -- throw away invalid signal
+				instr != Null : Null;
+				TRUE : i.signal;
+		esac;
 
-                        next(high_direction) := case
-                                !resolved : high_direction;
-                                instr = StartSeqHigh & high_mode = Off : next_direction;
-                                instr = StartOneHigh & high_mode = Off : next_direction;
-                                TRUE : high_direction;
-                        esac;
+		next(instr) := case
+				done : Null;
+				resolved : instr;
+				!signal_valid : instr;
+				i.signal = Null : instr;
+				i.signal = SelectXPlane & next_direction = Front : SelectSidePlane;
+				i.signal = SelectXPlane & next_direction = Side : SelectBothPlane;
+				i.signal = SelectXPlane & next_direction = Both : SelectFrontPlane;
+				i.signal = PrepSeqHigh : PrepSeqHigh;
+				i.signal = StartSeqHigh : StartSeqHigh;
+				i.signal = StopSeqHigh : StopSeqHigh;
+				i.signal = UnprepSeqHigh : UnprepSeqHigh;
+				i.signal = StartOneHigh : StartOneHigh;
+				i.signal = StopOneHigh : StopOneHigh;
+				i.signal = LowFrontOn : LowFrontOn;
+				i.signal = LowFrontOff : LowFrontOff;
+				i.signal = LowSideOn : LowSideOn;
+				i.signal = LowSideOff : LowSideOff;
+				i.signal = LowBothOn : LowBothOn;
+				i.signal = LowBothOff : LowBothOff;
+		esac;
 
-                        next(low_mode) := case
-                                !resolved : low_mode;
-                                instr = LowFrontOn : Sequential;
-                                instr = LowSideOn : Sequential;
-                                instr = LowBothOn : Sequential;
-                                instr = LowFrontOff & low_direction = Front : Off;
-                                instr = LowSideOff & low_direction = Side : Off;
-                                instr = LowBothOff & low_direction = Both : Off;
-                                TRUE : low_mode;
-                        esac;
+		next(next_direction) := case
+				!resolved : next_direction; -- Do nothing while instr is not resolved
+				instr = SelectSidePlane : Side;
+				instr = SelectBothPlane : Both;
+				instr = SelectFrontPlane : Front;
+				TRUE : next_direction;
+		esac;
 
-                        next(high_mode) := case
-                                !resolved : high_mode;
-                                instr = StartSeqHigh : Sequential;
-                                instr = StartOneHigh : Single;
-                                instr = StopSeqHigh & high_mode = Sequential : Off;
-                                instr = StopOneHigh & high_mode = Single : Off;
-                                TRUE : high_mode;
-                        esac;
+		next(low_direction) := case
+				!resolved : low_direction;
+				instr = LowFrontOn & low_mode = Off : Front;
+				instr = LowSideOn & low_mode = Off : Side;
+				instr = LowBothOn & low_mode = Off : Both;
+				TRUE : low_direction;
+		esac;
 
-                        next(o.mode) := case
-                                high_mode = Sequential : Sequential;
-                                high_mode = Single : Single;
-                                low_mode = Sequential : Sequential;
-                                low_mode = Off : Off;
-                        esac;
+		next(high_direction) := case
+				!resolved : high_direction;
+				instr = StartSeqHigh & high_mode = Off : next_direction;
+				instr = StartOneHigh & high_mode = Off : next_direction;
+				TRUE : high_direction;
+		esac;
 
-                        next(o.direction) := case
-                                high_mode != Off : high_direction;
-                                low_mode != Off: low_direction;
-                                TRUE : o.direction;
-                        esac;
+		next(low_mode) := case
+				!resolved : low_mode;
+				instr = LowFrontOn : Sequential;
+				instr = LowSideOn : Sequential;
+				instr = LowBothOn : Sequential;
+				instr = LowFrontOff & low_direction = Front : Off;
+				instr = LowSideOff & low_direction = Side : Off;
+				instr = LowBothOff & low_direction = Both : Off;
+				TRUE : low_mode;
+		esac;
 
-                        next(o.dose) := case
-                                high_mode = Single : High;
-                                high_mode = Sequential : High;
-                                low_mode = Sequential : Low;
-                                TRUE : o.dose;
-                        esac;
+		next(high_mode) := case
+				!resolved : high_mode;
+				instr = StartSeqHigh : Sequential;
+				instr = StartOneHigh : Single;
+				instr = StopSeqHigh & high_mode = Sequential : Off;
+				instr = StopOneHigh & high_mode = Single : Off;
+				TRUE : high_mode;
+		esac;
 
-                        next(o.prepared) := case
-                                !resolved : o.prepared;
-                                instr = PrepSeqHigh : TRUE;
-                                instr = UnprepSeqHigh : FALSE;
-                                instr = StartSeqHigh : FALSE;
-                                instr = StartOneHigh : FALSE;
-                                TRUE : o.prepared;
-                        esac;
+		next(o.mode) := case
+				high_mode = Sequential : Sequential;
+				high_mode = Single : Single;
+				low_mode = Sequential : Sequential;
+				low_mode = Off : Off;
+		esac;
 
-                DEFINE
-                        resolved := (
-                                i.signal = Null & 
-                                instr != Null
-                        );
+		next(o.direction) := case
+				high_mode != Off : high_direction;
+				low_mode != Off: low_direction;
+				TRUE : o.direction;
+		esac;
 
-                        done := (
-                                (instr != Null) &
-                                (instr = SelectSidePlane -> next_direction = Side) &
-                                (instr = SelectBothPlane -> next_direction = Both) &
-                                (instr = SelectFrontPlane -> next_direction = Front) &
-                                (instr = PrepSeqHigh -> o.prepared) &
-                                (instr = StartSeqHigh -> o.mode = Sequential & o.dose = High & !o.prepared) &
-                                (instr = StopSeqHigh -> low_mode != Off | o.mode = Off) &
-                                (instr = UnprepSeqHigh -> !o.prepared) &
-                                (instr = StartOneHigh -> o.mode = Single & o.dose = High & !o.prepared) &
-                                (instr = StopOneHigh -> low_mode != Off | o.mode = Off) &
-                                (instr = LowFrontOn ->
-                                        low_mode = Sequential &
-                                        low_direction = Front & (
-                                                high_mode != Off | (
-                                                        o.mode = Sequential &
-                                                        o.dose = Low &
-                                                        o.direction = Front
-                                                )
-                                        )
-                                ) &
-                                (instr = LowFrontOff -> low_mode = Off & (high_mode != Off | o.mode = Off)) &
-                                (instr = LowSideOn -> 
-                                        low_mode = Sequential &
-                                        low_direction = Side & (
-                                                high_mode != Off | (
-                                                        o.mode = Sequential &
-                                                        o.dose = Low &
-                                                        o.direction = Side
-                                                )
-                                        )
-                                ) &
-                                (instr = LowSideOff -> low_mode = Off & (high_mode != Off | o.mode = Off)) &
-                                (instr = LowBothOn -> 
-                                        low_mode = Sequential &
-                                        low_direction = Both & (
-                                                high_mode != Off | (
-                                                        o.mode = Sequential &
-                                                        o.dose = Low &
-                                                        o.direction = Both
-                                                )
-                                        )
-                                ) &
-                                (instr = LowBothOff -> low_mode = Off & (high_mode != Off | o.mode = Off))
-                        );
-                        
-                        signal_valid := (
-                                (i.signal = SelectXPlane -> TRUE) &
-                                (i.signal = PrepSeqHigh -> high_mode = Off & !o.prepared) &
-                                (i.signal = StartSeqHigh -> high_mode = Off & o.prepared) &
-                                (i.signal = StopSeqHigh -> high_mode = Sequential) &
-                                (i.signal = UnprepSeqHigh -> high_mode = Off & o.prepared) &
-                                (i.signal = StartOneHigh -> high_mode = Off & o.prepared) &
-                                (i.signal = StopOneHigh -> high_mode = Single) &
-                                (i.signal = LowFrontOn -> low_mode = Off) &
-                                (i.signal = LowFrontOff -> low_mode = Sequential & low_direction = Front) &
-                                (i.signal = LowSideOn -> low_mode = Off) &
-                                (i.signal = LowSideOff -> low_mode = Sequential & low_direction = Side) &
-                                (i.signal = LowBothOn -> low_mode = Off) &
-                                (i.signal = LowBothOff -> low_mode = Sequential & low_direction = Both) 
-                        );
-                        
-                        dose_no := o.mode = Off;
-                        dose_low := o.dose = Low & o.mode = Sequential;
-                        dose_high := o.dose = High & o.mode in {Sequential, Single};
-                        low_signal := i.signal in {LowFrontOn, LowSideOn, LowBothOn};
+		next(o.dose) := case
+				high_mode = Single : High;
+				high_mode = Sequential : High;
+				low_mode = Sequential : Low;
+				TRUE : o.dose;
+		esac;
 
-        -- General requirement 1
-        LTLSPEC G (o.mode in {Sequential, Single} -> O i.signal in {StartSeqHigh, StartOneHigh, LowFrontOn, LowSideOn, LowBothOn})
-        -- General requirement 2 TODO (errors)
-        -- General requirement 3 TODO
-        -- General requirement 4
+		next(o.prepared) := case
+				!resolved : o.prepared;
+				instr = PrepSeqHigh : TRUE;
+				instr = UnprepSeqHigh : FALSE;
+				instr = StartSeqHigh : FALSE;
+				instr = StartOneHigh : FALSE;
+				TRUE : o.prepared;
+		esac;
 
+	DEFINE
+		resolved := (
+				i.signal = Null &
+				instr != Null
+		);
+
+		done := (
+				(instr != Null) &
+				(instr = SelectSidePlane -> next_direction = Side) &
+				(instr = SelectBothPlane -> next_direction = Both) &
+				(instr = SelectFrontPlane -> next_direction = Front) &
+				(instr = PrepSeqHigh -> o.prepared) &
+				(instr = StartSeqHigh -> o.mode = Sequential & o.dose = High & !o.prepared) &
+				(instr = StopSeqHigh -> low_mode != Off | o.mode = Off) &
+				(instr = UnprepSeqHigh -> !o.prepared) &
+				(instr = StartOneHigh -> o.mode = Single & o.dose = High & !o.prepared) &
+				(instr = StopOneHigh -> low_mode != Off | o.mode = Off) &
+				(instr = LowFrontOn ->
+						low_mode = Sequential &
+						low_direction = Front & (
+								high_mode != Off | (
+										o.mode = Sequential &
+										o.dose = Low &
+										o.direction = Front
+								)
+						)
+				) &
+				(instr = LowFrontOff -> low_mode = Off & (high_mode != Off | o.mode = Off)) &
+				(instr = LowSideOn ->
+						low_mode = Sequential &
+						low_direction = Side & (
+								high_mode != Off | (
+										o.mode = Sequential &
+										o.dose = Low &
+										o.direction = Side
+								)
+						)
+				) &
+				(instr = LowSideOff -> low_mode = Off & (high_mode != Off | o.mode = Off)) &
+				(instr = LowBothOn ->
+						low_mode = Sequential &
+						low_direction = Both & (
+								high_mode != Off | (
+										o.mode = Sequential &
+										o.dose = Low &
+										o.direction = Both
+								)
+						)
+				) &
+				(instr = LowBothOff -> low_mode = Off & (high_mode != Off | o.mode = Off))
+		);
+
+		signal_valid := (
+				(i.signal = SelectXPlane -> TRUE) &
+				(i.signal = PrepSeqHigh -> high_mode = Off & !o.prepared) &
+				(i.signal = StartSeqHigh -> high_mode = Off & o.prepared) &
+				(i.signal = StopSeqHigh -> high_mode = Sequential) &
+				(i.signal = UnprepSeqHigh -> high_mode = Off & o.prepared) &
+				(i.signal = StartOneHigh -> high_mode = Off & o.prepared) &
+				(i.signal = StopOneHigh -> high_mode = Single) &
+				(i.signal = LowFrontOn -> low_mode = Off) &
+				(i.signal = LowFrontOff -> low_mode = Sequential & low_direction = Front) &
+				(i.signal = LowSideOn -> low_mode = Off) &
+				(i.signal = LowSideOff -> low_mode = Sequential & low_direction = Side) &
+				(i.signal = LowBothOn -> low_mode = Off) &
+				(i.signal = LowBothOff -> low_mode = Sequential & low_direction = Both)
+		);
+
+		dose_no := o.mode = Off;
+		dose_low := o.dose = Low & o.mode = Sequential;
+		dose_high := o.dose = High & o.mode in {Sequential, Single};
+		low_signal := i.signal in {LowFrontOn, LowSideOn, LowBothOn};
+
+	-- General requirement 1
+	LTLSPEC G (o.mode in {Sequential, Single} -> O i.signal in {StartSeqHigh, StartOneHigh, LowFrontOn, LowSideOn, LowBothOn})
+
+	-- General requirement 2 TODO (errors)
+	-- General requirement 3 TODO
+	-- General requirement 4
 	LTLSPEC ! F (
 		dose_no &
 		dose_no U (
@@ -234,4 +234,31 @@ MODULE main
 								( !dose_high & !low_signal) U (
 									dose_low
 	))))))))
-	
+
+	-- Dose requirement 5
+	LTLSPEC G (instr = StartSeqHigh -> F (o.mode = Sequential & o.dose = High))
+	LTLSPEC G (instr = StartOneHigh -> F (o.mode = Single & o.dose = High))
+	LTLSPEC G (instr = StartSeqHigh & (F instr = StopSeqHigh) -> (instr != StartOneHigh U instr = StopSeqHigh))
+	LTLSPEC G (instr = StartOneHigh & (F instr = StopOneHigh) -> (instr != StartSeqHigh U instr = StopOneHigh))
+
+	-- Dose requirement 6
+	LTLSPEC G (instr = LowFrontOn & (F instr = LowFrontOff) -> (instr != LowSideOn & instr != LowBothOn U instr = LowFrontOff))
+	LTLSPEC G (instr = LowSideOn & (F instr = LowSideOff) -> (instr != LowFrontOn & instr != LowBothOn U instr = LowSideOff))
+	LTLSPEC G (instr = LowBothOn & (F instr = LowBothOff) -> (instr != LowFrontOn & instr != LowSideOn U instr = LowBothOff))
+
+	-- Dose requirement 7
+	LTLSPEC G (o.direction = Front & o.dose = Low & o.mode = Sequential & (F instr in {StartSeqHigh, StartOneHigh}) & (!F instr = LowFrontOff) -> (F o.dose = High & o.mode != Off))
+	LTLSPEC G (o.direction = Side & o.dose = Low & o.mode = Sequential & (F instr in {StartSeqHigh, StartOneHigh}) & (!F instr = LowSideOff) -> (F o.dose = High & o.mode != Off))
+	LTLSPEC G (o.direction = Both & o.dose = Low & o.mode = Sequential & (F instr in {StartSeqHigh, StartOneHigh}) & (!F instr = LowBothOff) -> (F o.dose = High & o.mode != Off))
+
+	-- Dose requirement 8 TODO (errors)
+
+	-- Dose requirement 9
+	LTLSPEC G (o.dose = High & o.mode != Off & instr in {LowFrontOn, LowSideOn, LowBothOn} & (F instr in {StopSeqHigh, StopOneHigh}) -> (o.dose != Low U instr in {StopSeqHigh, StopOneHigh}))
+
+	-- Error requirement 10 TODO
+	-- Error requirement 11 TODO
+	-- Error requirement 12 TODO
+	-- Error requirement 13 TODO
+	-- Error requirement 14 TODO
+	-- Error requirement 15 TODO
