@@ -141,18 +141,37 @@ MODULE main
 		esac;
 
 		next(o.mode) := case
+				high_sequential_mode & o.mode = Sequential & high_sequential_direction = Front & e.FrontHighError : Off;
+				high_sequential_mode & o.mode = Sequential & high_sequential_direction = Side & e.SideHighError : Off;
+				high_sequential_mode & o.mode = Sequential & high_sequential_direction = Both & error_high : Off;
+				
+				high_single_mode & o.mode = Single & high_single_direction = Front & e.FrontHighError : Off;
+				high_single_mode & o.mode = Single & high_single_direction = Side & e.SideHighError : Off;
+				high_single_mode & o.mode = Single & high_single_direction = Both & error_high : Off;
+				
 				high_sequential_mode & high_single_mode : o.mode; -- If both are set, one was set earlier, and thus has precendence
 				high_sequential_mode : Sequential;
 				high_single_mode : Single;
+				
+				low_mode & low_direction = Front & e.FrontLowError : Off;
+				low_mode & low_direction = Side & e.SideLowError : Off;
+				low_mode & low_direction = Both & e.FrontLowError & e.SideLowError : Off;
+
 				low_mode : Sequential;
+				
 				!low_mode : Off;
 		esac;
 
-		next(o.direction) := case
+		next(o.direction) := case		
 				high_sequential_mode & high_single_mode : o.direction; -- If both are set, one was set earlier, and thus has precendence
 				high_sequential_mode : high_sequential_direction;
 				high_single_mode : high_single_direction;
+				
+				low_mode & low_direction = Both & !e.FrontLowError & e.SideLowError : Front;
+				low_mode & low_direction = Both & e.FrontLowError & !e.SideLowError : Side;
+				
 				low_mode : low_direction;
+				
 				TRUE : o.direction;
 		esac;
 
