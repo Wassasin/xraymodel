@@ -184,7 +184,7 @@ MODULE main
 		next(o.prepared) := case
 				!resolved : o.prepared;
 				instr = PrepSeqHigh : TRUE;
-				instr = StartSeqHigh : FALSE;
+				instr = UnprepSeqHigh : FALSE;
 				TRUE : o.prepared;
 		esac;
 
@@ -201,17 +201,16 @@ MODULE main
 				(instr = SelectBothPlane -> next_direction = Both) &
 				(instr = SelectFrontPlane -> next_direction = Front) &
 				(instr = PrepSeqHigh -> o.prepared) &
-				(instr = StartSeqHigh -> o.mode = Sequential & o.dose = High & !o.prepared) &
-				(instr = StopSeqHigh -> low_mode | o.mode = Off) &
+				(instr = StartSeqHigh -> (dose_highseq | (dose_highone & high_sequential_mode))) &
+				(instr = StopSeqHigh -> !dose_highseq) &
 				(instr = UnprepSeqHigh -> !o.prepared) &
-				(instr = StartOneHigh -> o.mode = Single & o.dose = High & !o.prepared) &
-				(instr = StopOneHigh -> low_mode | o.mode = Off) &
+				(instr = StartOneHigh -> (dose_highone | (dose_highseq & high_single_mode))) &
+				(instr = StopOneHigh -> !dose_highone) &
 				(instr = LowFrontOn & !e.FrontLowError ->
 						low_mode &
 						low_direction = Front & (
 								(high_sequential_mode | high_single_mode) | (
-										o.mode = Sequential &
-										o.dose = Low &
+										dose_low &
 										o.direction = Front
 								)
 						)
@@ -221,8 +220,7 @@ MODULE main
 						low_mode &
 						low_direction = Side & (
 								(high_sequential_mode | high_single_mode) | (
-										o.mode = Sequential &
-										o.dose = Low &
+										dose_low &
 										o.direction = Side
 								)
 						)
@@ -232,8 +230,7 @@ MODULE main
 						low_mode &
 						low_direction = Both & (
 								(high_sequential_mode | high_single_mode) | (
-										o.mode = Sequential &
-										o.dose = Low &
+										dose_low &
 										o.direction = Both
 								)
 						)
@@ -242,8 +239,7 @@ MODULE main
 						low_mode &
 						low_direction = Side & (
 								(high_sequential_mode | high_single_mode) | (
-										o.mode = Sequential &
-										o.dose = Low &
+										dose_low &
 										o.direction = Side
 								)
 						)
@@ -252,8 +248,7 @@ MODULE main
 						low_mode &
 						low_direction = Front & (
 								(high_sequential_mode | high_single_mode) | (
-										o.mode = Sequential &
-										o.dose = Low &
+										dose_low &
 										o.direction = Front
 								)
 						)
