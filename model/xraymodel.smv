@@ -272,11 +272,11 @@ MODULE main
 				(i.signal = UnprepSeqHigh -> !high_sequential_mode & o.prepared) &
 				(i.signal = StartOneHigh -> !high_single_mode & !error_high_current) &
 				(i.signal = StopOneHigh -> high_single_mode) &
-				(i.signal = LowFrontOn -> !low_mode & !dose_high & !e.FrontLowError) &
+				(i.signal = LowFrontOn -> !low_mode & !e.FrontLowError) &
 				(i.signal = LowFrontOff -> low_mode & low_direction = Front) &
-				(i.signal = LowSideOn -> !low_mode & !dose_high & !e.SideLowError) &
+				(i.signal = LowSideOn -> !low_mode & !e.SideLowError) &
 				(i.signal = LowSideOff -> low_mode & low_direction = Side) &
-				(i.signal = LowBothOn -> !low_mode & !dose_high) &
+				(i.signal = LowBothOn -> !low_mode) &
 				(i.signal = LowBothOff -> low_mode & low_direction = Both)
 		);
 		
