@@ -53,6 +53,8 @@
 \newcommand{\lowsignal}{\textrm{low\_signal}}
 \newcommand{\highsignal}{\textrm{high\_signal}}
 \newcommand{\errorany}{\textrm{error\_any}}
+\newcommand{\errorlow}{\textrm{error\_low}}
+\newcommand{\errorlowboth}{\textrm{error\_lowboth}}
 \newcommand{\errorhigh}{\textrm{error\_high}}
 \newcommand{\lowmode}{\textrm{low\_mode}}
 
@@ -188,23 +190,42 @@
 				\hspace{-8em}(\LTLG !\errorany) \imply \LTLG & (\dosehighseq \land \lowsignal \land (\LTLF \textrm{i.signal = StopSeqHigh}) \imply (\textrm{o.dose} \neq \textrm{Low} \LTLU \textrm{i.signal = StopSeqHigh})) \land \\
 				\hspace{-8em}	& (\dosehighone \land \lowsignal \land (\LTLF \textrm{i.signal = StopOneHigh}) \imply (\textrm{o.dose} \neq \textrm{Low} \LTLU \textrm{i.signal = StopOneHigh}))
 			\end{align*}
-	
-		\item \textbf{The system is not prepared or a dose is started if there is an error for the corresponding type and Xplane.}
-			\begin{align*}
-				\LTLG &(!\textrm{o.prepared} \land \errorhigh \land (\LTLF !\errorhigh) \imply (!\textrm{o.prepared} \LTLU !\errorhigh)) \land \\
-						& %TODO
-			\end{align*}
 
+		\item \textbf{The system is not prepared or a dose is started if there is an error for the corresponding type and Xplane.} %TODO KLOPT NOG NIET?
+			\begin{align*}
+				\LTLG &(!\textrm{o.prepared} \land \errorhigh \land (\LTLF !\errorhigh) \\
+				&\hspace{1em}	\imply (!\textrm{o.prepared} \LTLU !\errorhigh)) \land \\
+				& (\doseno \land \textrm{i.signal = LowFrontOn} \land \textrm{e.FrontLowError} \land (\LTLF !\textrm{e.FrontLowError}) \\
+				&\hspace{1em}	\imply (!(\textrm{o.direction = Front} \land \doselow) \LTLU !\textrm{e.FrontLowError})) \land \\
+				& (\doseno \land \textrm{i.signal = LowSideOn} \land \textrm{e.SideLowError} \land (\LTLF !\textrm{e.SideLowError}) \\
+				&\hspace{1em}	\imply (!(\textrm{o.direction = Side} \land \doselow) \LTLU !\textrm{e.SideLowError})) \land \\
+				& (\doseno \land \textrm{i.signal = LowBothOn} \land \errorlow \land (\LTLF !\errorlow) \\
+				&\hspace{1em}	\imply (!(\textrm{o.direction = Both} \land \doselow) \LTLU !\errorlow)) \land \\
+				& (\textrm{i.signal = StartSeqHigh} \land \textrm{next\_direction = Front} \land \textrm{e.FrontHighError} \land (\LTLF !\textrm{e.FrontHighError}) \\
+				&\hspace{1em}	\imply (!(\dosehighseq \land \textrm{o.direction = Front}) \LTLU !\textrm{e.FrontHighError})) \land \\
+				& (\textrm{i.signal = StartSeqHigh} \land \textrm{next\_direction = Side} \land \textrm{e.SideHighError} \land (\LTLF !\textrm{e.SideHighError}) \\
+				&\hspace{1em}	\imply (!(\dosehighseq \land \textrm{o.direction = Side}) \LTLU !\textrm{e.SideHighError})) \land \\
+				& (\textrm{i.signal = StartSeqHigh} \land \textrm{next\_direction = Both} \land \errorhigh \land (\LTLF !\errorhigh) \\
+				&\hspace{1em}	\imply (!(\dosehighseq \land \textrm{o.direction = Both}) \LTLU !\errorhigh)) \land \\
+				& (\textrm{i.signal = StartOneHigh} \land \textrm{next\_direction = Front} \land \textrm{e.FrontHighError} \land (\LTLF !\textrm{e.FrontHighError}) \\
+				&\hspace{1em}	\imply (!(\dosehighone \land \textrm{o.direction = Front}) \LTLU !\textrm{e.FrontHighError})) \land \\
+				& (\textrm{i.signal = StartOneHigh} \land \textrm{next\_direction = Side} \land \textrm{e.SideHighError} \land (\LTLF !\textrm{e.SideHighError}) \\
+				&\hspace{1em}	\imply (!(\dosehighone \land \textrm{o.direction = Side}) \LTLU !\textrm{e.SideHighError})) \land \\
+				& (\textrm{i.signal = StartOneHigh} \land \textrm{next\_direction = Both} \land \errorhigh \land (\LTLF !\errorhigh) \\
+				&\hspace{1em}	\imply (!(\dosehighone \land \textrm{o.direction = Both}) \LTLU !\errorhigh))
+			\end{align*}
 		\item \textbf{For Low dose a degraded mode is used in case of an error, that is, if Xplane Both is requested then}
 			\begin{enumerate}
 				\item only Xplane Front is used if SideLowError holds;
-					\[
-					\hspace{-8em}	(\LTLG !\errorhigh) \imply \LTLG (\doseno \land \textrm{instr = LowBothOn} \land \textrm{e.FrontLowError} \land (!\LTLF \textrm{e.FrontLowError}) \imply \LTLF \textrm{o.direction = Side})
-					\]
+					\begin{align*}
+						(\LTLG !\errorhigh) \imply \LTLG &(\doseno \land \textrm{instr = LowBothOn} \land \textrm{e.FrontLowError} \land (!\LTLF \textrm{e.FrontLowError}) \\
+						&\hspace{1em}	\imply \LTLF \textrm{o.direction = Side})
+					\end{align*}
 				\item only Xplane Side is used if FrontLowError holds.
-					\[
-					\hspace{-8em}	(\LTLG !\errorhigh) \imply \LTLG (\doseno \land \textrm{instr = LowBothOn} \land \textrm{e.SideLowError} \land (!\LTLF \textrm{e.SideLowError}) \imply \LTLF \textrm{o.direction = Front})
-					\]
+					\begin{align*}
+						(\LTLG !\errorhigh) \imply \LTLG &(\doseno \land \textrm{instr = LowBothOn} \land \textrm{e.SideLowError} \land (!\LTLF \textrm{e.SideLowError}) \\
+						&\hspace{1em}	\imply \LTLF \textrm{o.direction = Front})
+					\end{align*}
 			\end{enumerate}
 
 		\item \textbf{There is no degraded mode for High dose; if there is an error on one the Xplanes no High dose should be generated.}
@@ -214,7 +235,18 @@
 
 		\item \textbf{For a request it is checked only once whether an error exists; if there an error, the request is discarded.
 			The exception is an interrupted Low dose; then the error condition is checked again when the Low dose may resume.}
-			
+
+			\begin{align*}
+				\LTLG & (\textrm{e.FrontLowError} \land \textrm{i.signal = LowFrontOn} \imply \LTLF !(\textrm{o.direction = Front} \land \doselow)) \land \\
+				& (\textrm{e.SideLowError} \land \textrm{i.signal = LowSideOn} \imply \LTLF !(\textrm{o.direction = Side} \land \doselow)) \land \\
+				& (\errorlowboth \land \textrm{i.signal = LowBothOn} \imply \LTLF !\doselow) \land \\
+				& (\textrm{e.FrontHighError} \land \textrm{next\_direction = Front} \land \textrm{i.signal} \in \{\textrm{StartSeqHigh, StartOneHigh}\} \\
+				&\hspace{1em}	\imply \LTLF !(\textrm{o.direction = Front} \land \dosehigh)) \land \\
+				& (\textrm{e.SideHighError} \land \textrm{next\_direction = Side} \land \textrm{i.signal} \in \{\textrm{StartSeqHigh, StartOneHigh}\} \\
+				&\hspace{1em}	\imply \LTLF !(\textrm{o.direction = Side} \land \dosehigh)) \land \\
+				& (\errorhigh \land \textrm{next\_direction = Both} \land \textrm{i.signal} \in \{\textrm{StartSeqHigh, StartOneHigh}\} \imply \LTLF !\dosehigh)
+			\end{align*}
+
 			It is inconsistent to disregard signals in case of an error, because the system may only be re-enabled when the corresponding Off-signal is received.
 			In the system the signal is processed, but the corresponding part of the machine is blocked.
 			This should result in no corresponding dose being generated.
@@ -224,11 +256,17 @@
 			For instance, High dose X-ray on Front is stopped when SideHighError occurs.
 			High dose may only be generated when all High requests are released an all High errors have been resolved.}
 			
+			\begin{align*}
+				\LTLG & (\doselow \land \textrm{o.direction} \in \{\textrm{Front, DegradedFront}\} \land \textrm{e.FrontLowError} \imply \LTLF !\doselow) \land \\
+				&  (\doselow \land \textrm{o.direction} \in \{\textrm{Side, DegradedSide}\} \land \textrm{e.FrontSideError} \imply \LTLF !\doselow) \land \\
+				& (\doselow \land \textrm{o.direction = Both} \land \errorlow \imply \LTLF !\doselow)
+			\end{align*}
+
 			The last remark is in conflict with that HighFront should still function in case of a HighSideError.
-			Thus it is disregarded.
+			Thus it is disregarded. Also for high doses, this requirement is basically the same as requirement number 12.
 
 		\item \textbf{It should not be possible to select an erroneous Xplane for High dose.}
-			
+
 			In this case the actual system would send the user a notice, that the selected Xplane does not work.
 			Because we do not have to implement this notice (see our mail with Jozef from 2013-06-23), this requirement does not say anything about our model.
 			Thus we did not implement this LTLSPEC.
@@ -268,11 +306,12 @@
 	\section{Reflection}
 	We had some troubles while making this assignment.
 	The most difficult part was dealing with the requirements sheet.
-	The requirements are not exhaustive, some are ambiguious and some are simply vague.
+	The requirements are not exhaustive, some are ambiguous and some are simply vague.
 	This is partly due to that the system itself is very complicated and in some situations counter-intuitive.
 	The videos help a bit, but also do not cover all possible situations.
-	It would have been helpful to have some sort of black box to test situations on.
-	If this would have been a real world scenario, there would naturally not be a black box available.
+	It would have been useful to have some sort of black box to test situations on.
+	Although if this would have been a real world scenario, there would naturally not be a black box available either.
+	Another issue was that we did not have enough time in the end to pay a lot of attention to this report, for instance.
 	
 	The modeling tool itself was useful, because NuSMV2 quickly finds situations that one has not thought of when designing the model / system.
 	However, the assignment is very similar to the previous assignment.
