@@ -152,17 +152,12 @@ MODULE main
 		esac;
 
 		next(o.mode) := case
-				high_sequential_mode & o.mode = Sequential & high_sequential_direction = Front & high_front_blocked : Off;
-				high_sequential_mode & o.mode = Sequential & high_sequential_direction = Side & high_side_blocked : Off;
-				high_sequential_mode & o.mode = Sequential & high_sequential_direction = Both & (high_front_blocked | high_side_blocked) : Off;
-				
-				high_single_mode & o.mode = Single & high_single_direction = Front & high_front_blocked : Off;
-				high_single_mode & o.mode = Single & high_single_direction = Side & high_side_blocked : Off;
-				high_single_mode & o.mode = Single & high_single_direction = Both & (high_front_blocked | high_side_blocked) : Off;
+				high_sequential_mode & o.mode = Sequential & blocked_high_sequential_current : Off;				
+				high_single_mode & o.mode = Single & blocked_high_single_current : Off;
 				
 				high_sequential_mode & high_single_mode : o.mode; -- If both are set, one was set earlier, and thus has precendence
-				high_sequential_mode : Sequential;
-				high_single_mode : Single;
+				high_sequential_mode & !blocked_high_sequential_current : Sequential;
+				high_single_mode & !blocked_high_single_current: Single;
 				
 				low_mode & low_direction in {Front, DegradedFront} & low_front_blocked : Off;
 				low_mode & low_direction in {Side, DegradedSide} & low_side_blocked : Off;
@@ -316,10 +311,10 @@ MODULE main
 		signal_valid := (
 				(i.signal = SelectXPlane -> TRUE) & -- Possible to do with any error, errors handled at output-stage, see mail 26-06-2013 14:43
 				(i.signal = PrepSeqHigh -> !high_sequential_mode & !o.prepared) &
-				(i.signal = StartSeqHigh -> !high_sequential_mode & o.prepared & !blocked_high_current) &
+				(i.signal = StartSeqHigh -> !high_sequential_mode & o.prepared & !blocked_high_next) &
 				(i.signal = StopSeqHigh -> high_sequential_mode) &
 				(i.signal = UnprepSeqHigh -> !high_sequential_mode & o.prepared) &
-				(i.signal = StartOneHigh -> !high_single_mode & !blocked_high_current) &
+				(i.signal = StartOneHigh -> !high_single_mode & !blocked_high_next) &
 				(i.signal = StopOneHigh -> high_single_mode) &
 				(i.signal = LowFrontOn -> !low_mode & !low_front_blocked) &
 				(i.signal = LowFrontOff -> low_mode & low_direction = Front) &
@@ -329,10 +324,22 @@ MODULE main
 				(i.signal = LowBothOff -> low_mode & low_direction in {Both, DegradedFront, DegradedSide})
 		);
 		
-		blocked_high_current := (
+		blocked_high_next := (
 				(next_direction = Front & high_front_blocked) |
 				(next_direction = Side & high_side_blocked) |
 				(next_direction = Both & (high_front_blocked | high_side_blocked))
+		);
+		
+		blocked_high_sequential_current := (
+				(high_sequential_direction = Front & high_front_blocked) |
+				(high_sequential_direction = Side & high_side_blocked) |
+				(high_sequential_direction = Both & (high_front_blocked | high_side_blocked))
+		);
+		
+		blocked_high_single_current := (
+				(high_single_direction = Front & high_front_blocked) |
+				(high_single_direction = Side & high_side_blocked) |
+				(high_single_direction = Both & (high_front_blocked | high_side_blocked))
 		);
 
 		dose_no := o.mode = Off;
