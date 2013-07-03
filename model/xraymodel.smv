@@ -170,8 +170,8 @@ MODULE main
 
 		next(o.direction) := case		
 				high_sequential_mode & high_single_mode : o.direction; -- If both are set, one was set earlier, and thus has precendence
-				high_sequential_mode : high_sequential_direction;
-				high_single_mode : high_single_direction;
+				high_sequential_mode & !blocked_high_sequential_current : high_sequential_direction;
+				high_single_mode & !blocked_high_single_current : high_single_direction;
 				
 				low_mode & low_direction = DegradedFront : Front;
 				low_mode & low_direction = DegradedSide : Side;
@@ -182,7 +182,8 @@ MODULE main
 		esac;
 
 		next(o.dose) := case
-				high_sequential_mode | high_single_mode : High;
+				high_sequential_mode & !blocked_high_sequential_current : High;
+				high_single_mode & !blocked_high_sequential_current : High;
 				low_mode : Low;
 				TRUE : o.dose;
 		esac;
@@ -234,10 +235,10 @@ MODULE main
 				(instr = SelectBothPlane -> next_direction = Both) &
 				(instr = SelectFrontPlane -> next_direction = Front) &
 				(instr = PrepSeqHigh -> o.prepared) &
-				(instr = StartSeqHigh -> (dose_highseq | (dose_highone & high_sequential_mode))) &
+				(instr = StartSeqHigh & !blocked_high_sequential_current -> (dose_highseq | (dose_highone & high_sequential_mode))) &
 				(instr = StopSeqHigh -> !dose_highseq) &
 				(instr = UnprepSeqHigh -> !o.prepared) &
-				(instr = StartOneHigh -> (dose_highone | (dose_highseq & high_single_mode))) &
+				(instr = StartOneHigh & !blocked_high_single_current -> (dose_highone | (dose_highseq & high_single_mode))) &
 				(instr = StopOneHigh -> !dose_highone) &
 				(instr = LowFrontOn & !low_front_blocked ->
 						low_mode &
