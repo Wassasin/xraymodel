@@ -56,10 +56,12 @@
 	\maketitle
 
 	\section{Introduction}
-	At Philips Medical Systems, an interventional X-ray system is being developed. Our goal is to make a NuSMV2 model based on a requirements sheet and some illustrating movies, that satisfies all these requirements.
+	At Philips Medical Systems, an interventional X-ray system is being developed.
+	Our goal is to make a NuSMV2 model based on a requirements sheet and some illustrating movies, that satisfies all these requirements.
 
 	\section{Requirements}
-	All atomic propositions correspond with variables in our model.
+	All atomic propositions correspond with variables or macro definitions in our model.
+	
 	\begin{enumerate}
 		\item There should be no X-ray if there is no request for it.
 			\begin{align*}
@@ -89,17 +91,54 @@
 		\item It should not be possible to select an erroneous Xplane for High dose.
 	\end{enumerate}
 	
+	Most of these LTL specifications take a very long time to compute in NuSMV2.
+	This shows that with our model we reach the boundaries of what is feasibly computable with NuSMV2.
+	However, during testing we noticed that the \textsc{-dynamic}-flag of NuSMV2 works exceptionally well to reduce computing time and required memory.
+	With this flag, NuSMV2 adapts the variable ordening to suit each seperate LTLSPEC.
+	
 	\section{Our model}
-	We modelled the pedals and the handswitch of the interventional X-ray system as a stream of input signals. An input module can fire these signals at random.
+	We modelled the pedals and the handswitch of the interventional X-ray system as a stream of input signals.
+	An input module can fire these signals at random.
 	
-	During the first `stage', the model checks if the signal is valid. Some signals can directly be thrown away, like a \texttt{LowFrontOff} signal when there has never been a \texttt{LowFrontOn} signal. If it is valid, then the signal is converted to a machine instruction, of which there are seperate ones for selecting each new XPlane with the toggle pedal, and marked \texttt{resolved}. Third, variables like \texttt{next\_direction} and \texttt{high\_sequential\_mode} are set to the values of what the machine WANTS to do next. Fourth, variables of the output module are set to their correct values. Finally, the instruction is marked \texttt{done} and we allow for new instructions. This whole cycle is necessary, unfortunately, to cope with all possible situations and combinations.
+	During the first `stage', the model checks if the signal is valid.
+	Some signals can directly be thrown away, like a \texttt{LowFrontOff} signal when there has never been a \texttt{LowFrontOn} signal.
+	If it is valid, then the signal is converted to a machine instruction.
+	Contrary to UPPAAL, NuSMV2 does not support atomic assignments for multiple variables.
+	We've implemented this separate machine instruction because it is not possible to consume a signal and process it in the same transition.
 	
-	A separate error module can raise random errors during any transition. Because the machine has to remember if there has been an error after a pedal has been pressed, it too has four `blocked' variables. These are only set to false after the error has gone and when some pedals are no longer pressed. The addition of errors also made us add seperate directions for degraded mode: \texttt{DegradedSide} and \texttt{DegradedLow}.
+	This is especially required in case of the \texttt{SelectXPlane}-signal.
+	This signal is supposed to change the internal \texttt{next\_direction}-variable \emph{once}.
+	There is no way to change this direction, and then mark the signal as \emph{done} in the same transition.
+	Thus, we first translate this signal to specific \texttt{SelectPlane}-instructions, before marking the signal as \texttt{resolved}.
+
+	Third, internal variables like \texttt{next\_direction} and \texttt{high\_sequential\_mode} are set to the values of what the machine \emph{wants} to do next.
+	Fourth, variables of the output module are set to their correct values.
+	Finally, the instruction is marked \texttt{done} and we allow for new signals to be interpreted.
+	This whole cycle is necessary, unfortunately, because NuSMV2 does not support atomic operations.
 	
+	A seperate error module can raise random errors during any transition.
+	Because the machine has to remember if there has been an error after a pedal has been pressed, it too has four `blocked' variables.
+	These are only set to false after the error has gone and when the relevant pedals are no longer pressed.
+	The addition of errors also made us add seperate directions for the degraded mode: \texttt{DegradedSide} and \texttt{DegradedLow}.
 	Some additional comments on specific lines can be found in our model.
 
 	\section{Reflection}
-	We had some troubles while making this assignment. The most difficult part was dealing with the requirements sheet. The requirements are not exhaustive and some are simply vague. This is partly due to that the system itself is very complicated and works, in our opinion, counter-intuitive in some situations, but also due to ambiguities in descriptions. The videos help a bit, but also do not cover all possible situations. It would have been helpful to have some sort of black box to test situations on.
+	We had some troubles while making this assignment.
+	The most difficult part was dealing with the requirements sheet.
+	The requirements are not exhaustive, some are ambiguious and some are simply vague.
+	This is partly due to that the system itself is very complicated and in some situations counter-intuitive.
+	The videos help a bit, but also do not cover all possible situations.
+	It would have been helpful to have some sort of black box to test situations on.
+	If this would have been a real world scenario, there would naturally not be a black box available.
 	
-	The modeling itself was useful, because this quickly finds situations that one has not thought of when designing the model/system. However, the assignment is for the rest exactly the same as the previous assignment, so we did not learn anything new about temporal logic or model checking. Also, our opinion about NuSMV2 has not changed since the previous assignment. Something that we had some issues with, was that NuSMV2 cannot assign lots of variables in one transition. All our administration has to be done in a number of steps, where errors can pop up in any transition in any combination. This hugely increases the state space and makes it very hard to check some properties.
+	The modeling tool itself was useful, because NuSMV2 quickly finds situations that one has not thought of when designing the model / system.
+	However, the assignment is very similar to the previous assignment.
+	So we did not learn anything new about temporal logic or model checking.
+	Something that we had some issues with, was that NuSMV2 cannot atomically assign multiple variables in one transition.
+	All the internal administration of the model has to be done in a number of steps, where errors can pop up in any transition in any combination.
+	This hugely increases the state space and makes it very hard to check some properties.
+	
+	In retrospect using UPPAAL would've been a better choice for this model, because UPPAAL does support atomic assignments.
+	With UPPAAL however, we would not have been able to define the same \texttt{LTLSPECs} for the model due to less advanced LTL support in UPPAAL.
+	This could be worked around by implementing the appropriate Observer automatons.
 \end{document}
