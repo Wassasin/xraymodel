@@ -87,8 +87,15 @@
 			\end{enumerate}
 		\item There is no degraded mode for High dose; if there is an error on one the Xplanes no High dose should be generated.
 		\item For a request it is checked only once whether an error exists; if there an error, the request is discarded. The exception is an interrupted Low dose; then the error condition is checked again when the Low dose may resume.
-		\item When an error occurs during the generation of X-ray for the corresponding type (independent of the Xplane) , then any X-ray of that type is stopped immediately. A new generation of this type of dose may only occur when all requests for that type have been released and there is no error. For instance, High dose X-ray on Front is stopped when SideHighError occurs. High dose may only be generated when all High requests are released an all High errors have been resolved.
+		\item
+			When an error occurs during the generation of X-ray for the corresponding type (independent of the Xplane), then any X-ray of that type is stopped immediately.
+			A new generation of this type of dose may only occur when all requests for that type have been released and there is no error.
+			For instance, High dose X-ray on Front is stopped when SideHighError occurs.
+			High dose may only be generated when all High requests are released an all High errors have been resolved.
 		\item It should not be possible to select an erroneous Xplane for High dose.
+			In the actual system the user would receive a notice, that the selected Xplane does not work.
+			Because we do not have to implement this notice (mail with Jozef from 2013-06-23), this requirement does not say anything about our model.
+			Thus we did not implement this LTLSPEC.
 	\end{enumerate}
 	
 	Most of these LTL specifications take a very long time to compute in NuSMV2.
