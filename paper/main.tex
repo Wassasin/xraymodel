@@ -47,10 +47,14 @@
 \newcommand{\imply}{\rightarrow}
 \newcommand{\doselow}{\textrm{dose\_low}}
 \newcommand{\doseno}{\textrm{dose\_no}}
+\newcommand{\dosehigh}{\textrm{dose\_high}}
 \newcommand{\dosehighseq}{\textrm{dose\_highseq}}
 \newcommand{\dosehighone}{\textrm{dose\_highone}}
 \newcommand{\lowsignal}{\textrm{low\_signal}}
+\newcommand{\highsignal}{\textrm{high\_signal}}
 \newcommand{\errorany}{\textrm{error\_any}}
+\newcommand{\errorhigh}{\textrm{error\_high}}
+\newcommand{\lowmode}{\textrm{low\_mode}}
 
 \begin{document}
 	\maketitle
@@ -60,8 +64,7 @@
 	Our goal is to make a NuSMV2 model based on a requirements sheet and some illustrating movies, that satisfies all these requirements.
 
 	\section{Requirements}
-	All atomic propositions correspond with variables or macro definitions in our model.
-	
+	All atomic propositions correspond with variables in our model. In several cases, we are unable to check a full property, so we restrict ourselves to for instance paths without any errors. All LTL formulas below hold for our model.
 	\begin{enumerate}
 		\item There should be no X-ray if there is no request for it.
 			\begin{align*}
@@ -70,14 +73,122 @@
 					& ((\dosehighseq \land \LTLY \doseno) \imply \LTLY (\doseno \LTLS \textrm{i.signal = StartSeqHigh})) \land \\
 					& ((\dosehighone \land \LTLY \doseno) \imply \LTLY (\doseno \LTLS \textrm{i.signal = StartOneHigh})))
 			\end{align*}
+
 		\item There should be no X-ray of a certain type on an Xplane if there is an error on that Xplane for that type.
+			\begin{align*}
+				\LTLG & (\textrm{e.FrontLowError} \land \doselow \imply \LTLF !(\doselow \land \textrm{o.direction = Front})) \land \\
+					& (\textrm{e.SideLowError} \land \doselow \imply \LTLF !(\doselow \land \textrm{o.direction = Side})) \land \\
+					& (\textrm{e.FrontHighError} \land \dosehigh \imply \LTLF !(\dosehigh \land \textrm{o.direction = Front})) \land \\
+					& (\textrm{e.SideHighError} \land \dosehigh \imply \LTLF !(\dosehigh \land \textrm{o.direction = Side}))
+			\end{align*}
+
 		\item If there are no errors and no competing requests, then a request for X-ray should lead to the requested X-ray.
+			\begin{align*}
+				\LTLG & (\doseno \land \textrm{i.signal = StartSeqHigh} \land \textrm{next\_direction = Front} \land (!\textrm{e.FrontHighError} \LTLU \dosehighseq) \\
+					& \imply \LTLF \dosehighseq) \\
+				\land & (\doseno \land \textrm{i.signal = StartSeqHigh} \land \textrm{next\_direction = Side} \land (!\textrm{e.SideHighError} \LTLU \dosehighseq) \\
+					& \imply \LTLF \dosehighseq) \\
+				\land & (\doseno \land \textrm{i.signal = StartSeqHigh} \land \textrm{next\_direction = Both} \land (!\textrm{error\_highboth} \LTLU \dosehighseq) \\
+					& \imply \LTLF \dosehighseq) \\
+				\land & (\doseno \land \textrm{i.signal = StartOneHigh} \land \textrm{next\_direction = Front} \land (!\textrm{e.FrontHighError} \LTLU \dosehighone) \\
+					& \imply \LTLF \dosehighone) \\
+				\land & (\doseno \land \textrm{i.signal = StartOneHigh} \land \textrm{next\_direction = Side} \land (!\textrm{e.SideHighError} \LTLU \dosehighone) \\
+					& \imply \LTLF \dosehighone) \\
+				\land & (\doseno \land \textrm{i.signal = StartOneHigh} \land \textrm{next\_direction = Both} \land (!\textrm{error\_highboth} \LTLU \dosehighone) \\
+					& \imply \LTLF \dosehighone) \\
+				\land & (\doseno \land \textrm{i.signal = LowFrontOn} \land ((!\textrm{e.FrontLowError} \land !\highsignal) \LTLU \doselow) \\
+					& \imply \LTLF \doselow) \\
+				\land & (\doseno \land \textrm{i.signal = LowSideOn} \land ((!\textrm{e.SideLowError} \land !\highsignal) \LTLU \doselow) \\
+					& \imply \LTLF \doselow) \\
+				\land & (\doseno \land \textrm{i.signal = LowBothOn} \land ((!\textrm{error\_lowboth} \land !\highsignal) \LTLU \doselow) \\
+					& \imply \LTLF \doselow)
+			\end{align*}
+
 		\item The generated X-ray should conform to the current user request. For instance, if during a High dose, the request LowFrontOn, LowFrontOff occur then there should be no Low dose after the end of the High dose. Similarly, if while finishing a sequence of Low dose images, the requests StartOneHigh, StopOneHigh should not lead to High dose after the end of the Low dose.
+			\begin{align*}
+				&(\LTLG !\errorany) \imply !\LTLF (\dosehigh \land !\lowmode \land \textrm{i.signal = LowFrontOn} \land (\dosehigh \land !\lowmode \land \textrm{i.signal = LowFrontOn}) \LTLU ( \\
+				&	\hspace{1em}\dosehigh \land !\lowsignal \land (\dosehigh \land !\lowsignal) \LTLU ( \\
+				&		\hspace{2em}\dosehigh \land \textrm{i.signal = LowFrontOff} \land (\dosehigh \land \textrm{i.signal = LowFrontOff}) \LTLU ( \\
+				&			\hspace{3em}\dosehigh \land !\lowsignal \land (\dosehigh \land !\lowsignal) \LTLU ( \\
+				&				\hspace{4em}!\dosehigh \land !\lowsignal \land (!\dosehigh \land !\lowsignal) \LTLU ( \\
+				&					\hspace{5em}\doselow \\
+				&))))))
+			\end{align*}
+			\begin{align*}
+				&(\LTLG !\errorany) \imply !\LTLF (\dosehigh \land !\lowmode \land \textrm{i.signal = LowSideOn} \land (\dosehigh \land !\lowmode \land \textrm{i.signal = LowSideOn}) \LTLU ( \\
+				&	\hspace{1em}\dosehigh \land !\lowsignal \land (\dosehigh \land !\lowsignal) \LTLU ( \\
+				&		\hspace{2em}\dosehigh \land \textrm{i.signal = LowSideOff} \land (\dosehigh \land \textrm{i.signal = LowSideOff}) \LTLU ( \\
+				&			\hspace{3em}\dosehigh \land !\lowsignal \land (\dosehigh \land !\lowsignal) \LTLU ( \\
+				&				\hspace{4em}!\dosehigh \land !\lowsignal \land (!\dosehigh \land !\lowsignal) \LTLU ( \\
+				&					\hspace{5em}\doselow \\
+				&))))))
+			\end{align*}
+			\begin{align*}
+				&(\LTLG !\errorany) \imply !\LTLF (\dosehigh \land !\lowmode \land \textrm{i.signal = LowBothOn} \land (\dosehigh \land !\lowmode \land \textrm{i.signal = LowBothOn}) \LTLU ( \\
+				&	\hspace{1em}\dosehigh \land !\lowsignal \land (\dosehigh \land !\lowsignal) \LTLU ( \\
+				&		\hspace{2em}\dosehigh \land \textrm{i.signal = LowBothOff} \land (\dosehigh \land \textrm{i.signal = LowBothOff}) \LTLU ( \\
+				&			\hspace{3em}\dosehigh \land !\lowsignal \land (\dosehigh \land !\lowsignal) \LTLU ( \\
+				&				\hspace{4em}!\dosehigh \land !\lowsignal \land (!\dosehigh \land !\lowsignal) \LTLU ( \\
+				&					\hspace{5em}\doselow \\
+				&))))))
+			\end{align*}
+			\begin{align*}
+				&(\LTLG !\errorany) \imply !\LTLF (\doselow \land !\lowmode \land \textrm{i.signal = StartSeqHigh} \land (\doselow \land !\lowmode \land \textrm{i.signal = StartSeqHigh}) \LTLU ( \\
+				&	\hspace{1em}\doselow \land !\highsignal \land (\doselow \land !\highsignal) \LTLU ( \\
+				&		\hspace{2em}\doselow \land \textrm{i.signal = StopSeqHigh} \land (\doselow \land \textrm{i.signal = StopSeqHigh}) \LTLU ( \\
+				&			\hspace{3em}\doselow \land !\highsignal \land (\doselow \land !\highsignal) \LTLU ( \\
+				&				\hspace{4em}!\doselow \land !\highsignal \land (!\doselow \land !\highsignal) \LTLU ( \\
+				&					\hspace{5em}\dosehigh \\
+				&))))))
+			\end{align*}
+			\begin{align*}
+				&(\LTLG !\errorany) \imply !\LTLF (\doselow \land !\lowmode \land \textrm{i.signal = StartOneHigh} \land (\doselow \land !\lowmode \land \textrm{i.signal = StartOneHigh}) \LTLU ( \\
+				&	\hspace{1em}\doselow \land !\highsignal \land (\doselow \land !\highsignal) \LTLU ( \\
+				&		\hspace{2em}\doselow \land \textrm{i.signal = StopOneHigh} \land (\doselow \land \textrm{i.signal = StopOneHigh}) \LTLU ( \\
+				&			\hspace{3em}\doselow \land !\highsignal \land (\doselow \land !\highsignal) \LTLU ( \\
+				&				\hspace{4em}!\doselow \land !\highsignal \land (!\doselow \land !\highsignal) \LTLU ( \\
+				&					\hspace{5em}\dosehigh \\
+				&))))))
+			\end{align*}
+
 		\item After a request for High (Sequence or One), no other High request can result in a High dose until all requests are released. In other words, only the first High request can result in High dose and only when that request has been finished (and there are no other pending High requests) a new request can result in a High dose.
+			\begin{align*}
+				(\LTLG !\errorany) \imply \LTLG &((\dosehighseq \land (\LTLF \textrm{instr = StopSeqHigh}) \imply (\dosehighseq \LTLU \textrm{instr = StopSeqHigh})) \land \\
+					&(\dosehighone \land (\LTLF \textrm{instr = StopOneHigh}) \imply (\dosehighone \LTLU \textrm{instr = StopOneHigh})))
+			\end{align*}
+
 		\item Once a Low dose (on any Xplane) has been requested, no other Low request can result in a Low dose before all requests are released. In other words, only the Low request can result in a Low dose and only when that request has been finished (and there are no other pending Low requests) a new request can result in a Low dose.
+			\begin{align*}
+				&(\LTLG !\errorany) \imply \LTLG (\textrm{instr = LowFrontOn} \land !\dosehigh \imply \LTLF (\doselow \land \textrm{o.direction = Front})) \land \\
+				&	\hspace{1em}(\textrm{instr = LowSideOn} \land !\dosehigh \imply \LTLF (\doselow \land \textrm{o.direction = Side})) \land \\
+				&	\hspace{1em}(\textrm{instr = LowBothOn} \land !\dosehigh \imply \LTLF (\doselow \land \textrm{o.direction = Both})) \land \\
+				&	\hspace{1em}(\textrm{instr = LowFrontOn} \land (\LTLF \textrm{i.signal = LowFrontOff}) \imply (\textrm{instr} \notin \{\textrm{LowSideOn, LowBothOn}\} \LTLU \textrm{i.signal = LowFrontOff})) \land \\
+				&	\hspace{1em}(\textrm{instr = LowSideOn} \land (\LTLF \textrm{i.signal = LowSideOff}) \imply (\textrm{instr} \notin \{\textrm{LowBothOn, LowFrontOn}\} \LTLU \textrm{i.signal = LowSideOff})) \land \\
+				&	\hspace{1em}(\textrm{instr = LowBothOn} \land (\LTLF \textrm{i.signal = LowBothOff}) \imply (\textrm{instr} \notin \{\textrm{LowFrontOn, LowSideOn}\} \LTLU \textrm{i.signal = LowBothOff}))
+			\end{align*}
+
 		\item Requests for High dose have priority above Low dose requests.
+			\begin{align*}
+				(\LTLG !\errorany) \imply \LTLG &(\textrm{o.direction = Front} \land \doselow \land (\LTLF \textrm{instr} \in \{\textrm{StartSeqHigh, StartOneHigh}\}) \land \\
+					&	\hspace{1em}(!\LTLF \textrm{instr = LowFrontOff}) \imply \LTLF \dosehigh) \land \\
+					&(\textrm{o.direction = Side} \land \doselow \land (\LTLF \textrm{instr} \in \{\textrm{StartSeqHigh, StartOneHigh}\}) \land \\
+					&	\hspace{1em}(!\LTLF \textrm{instr = LowSideOff}) \imply \LTLF \dosehigh) \land \\
+					&(\textrm{o.direction = Both} \land \doselow \land (\LTLF \textrm{instr} \in \{\textrm{StartSeqHigh, StartOneHigh}\}) \land \\
+					&	\hspace{1em}(!\LTLF \textrm{instr = LowBothOff}) \imply \LTLF \dosehigh)
+			\end{align*}
+
 		\item A High request (PrepSeqHigh or StartOneHigh) without an error interrupts any Low dose. After this end of such a High dose interrupt, an interrupted Low request or a new pending Low request may continue.
+			\begin{align*}
+				\LTLG & (\doselow \land \textrm{instr = StartSeqHigh} \land (!\errorhigh \LTLU \textrm{instr = StopSeqHigh}) \imply (\doselow \LTLU \dosehigh \LTLU \doselow)) \land \\
+					&(\doselow \land \textrm{instr = StartOneHigh} \land (!\errorhigh \LTLU \textrm{instr = StopOneHigh}) \imply (\doselow \LTLU \dosehigh \LTLU \doselow))
+			\end{align*}
+
 		\item A High dose (prepare or start) is never interrupted by a Low dose request.
+			\begin{align*}
+				(\LTLG !\errorany) \imply \LTLG & (\dosehighseq \land \lowsignal \land (\LTLF \textrm{i.signal = StopSeqHigh}) \imply (\textrm{o.dose} \neq \textrm{Low} \LTLU \textrm{i.signal = StopSeqHigh})) \land \\
+					& (\dosehighone \land \lowsignal \land (\LTLF \textrm{i.signal = StopOneHigh}) \imply (\textrm{o.dose} \neq \textrm{Low} \LTLU \textrm{i.signal = StopOneHigh}))
+			\end{align*}
+	
 		\item The system is not prepared or a dose is started if there is an error for the corresponding type and Xplane.
 		\item For Low dose a degraded mode is used in case of an error, that is, if Xplane Both is requested then
 			\begin{enumerate}
