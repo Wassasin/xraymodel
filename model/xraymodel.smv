@@ -492,10 +492,10 @@ MODULE main
 	LTLSPEC G (error_high & next_direction = Both & i.signal in {StartSeqHigh, StartOneHigh} -> F !dose_high)
 
 	-- Error requirement 14
-	-- For High actually the same as requirement 14
+	-- For High actually the same as requirement 12
 	LTLSPEC G (dose_low & o.direction in {Front, DegradedFront} & e.FrontLowError -> F !dose_low)
 	LTLSPEC G (dose_low & o.direction in {Side, DegradedSide} & e.SideLowError -> F !dose_low)
-	LTLSPEC G (dose_low & o.direction = Both & (e.FrontLowError | e.SideLowError) -> F !dose_low)
+	LTLSPEC G (dose_low & o.direction = Both & error_low -> F !dose_low)
 	
 	-- Error requirement 15
 	-- Due to abstraction not relevant, see report
