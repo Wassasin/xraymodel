@@ -66,7 +66,7 @@
 	\section{Requirements}
 	All atomic propositions correspond with variables in our model. In several cases, we are unable to check a full property, so we restrict ourselves to for instance paths without any errors. All LTL formulas below hold for our model.
 	\begin{enumerate}
-		\item There should be no X-ray if there is no request for it.
+		\item \textbf{There should be no X-ray if there is no request for it.}
 			\begin{align*}
 				(\LTLG !\errorany) \imply & (\LTLG \\
 					& ((\doselow \land \LTLY \doseno) \imply \LTLY (\doseno \LTLS \lowsignal)) \land \\
@@ -74,7 +74,7 @@
 					& ((\dosehighone \land \LTLY \doseno) \imply \LTLY (\doseno \LTLS \textrm{i.signal = StartOneHigh})))
 			\end{align*}
 
-		\item There should be no X-ray of a certain type on an Xplane if there is an error on that Xplane for that type.
+		\item \textbf{There should be no X-ray of a certain type on an Xplane if there is an error on that Xplane for that type.}
 			\begin{align*}
 				\LTLG & (\textrm{e.FrontLowError} \land \doselow \imply \LTLF !(\doselow \land \textrm{o.direction = Front})) \land \\
 					& (\textrm{e.SideLowError} \land \doselow \imply \LTLF !(\doselow \land \textrm{o.direction = Side})) \land \\
@@ -82,7 +82,7 @@
 					& (\textrm{e.SideHighError} \land \dosehigh \imply \LTLF !(\dosehigh \land \textrm{o.direction = Side}))
 			\end{align*}
 
-		\item If there are no errors and no competing requests, then a request for X-ray should lead to the requested X-ray.
+		\item \textbf{If there are no errors and no competing requests, then a request for X-ray should lead to the requested X-ray.}
 			\begin{align*}
 				\LTLG & (\doseno \land \textrm{i.signal = StartSeqHigh} \land \textrm{next\_direction = Front} \land (!\textrm{e.FrontHighError} \LTLU \dosehighseq) \\
 					& \imply \LTLF \dosehighseq) \\
@@ -104,7 +104,7 @@
 					& \imply \LTLF \doselow)
 			\end{align*}
 
-		\item The generated X-ray should conform to the current user request. For instance, if during a High dose, the request LowFrontOn, LowFrontOff occur then there should be no Low dose after the end of the High dose. Similarly, if while finishing a sequence of Low dose images, the requests StartOneHigh, StopOneHigh should not lead to High dose after the end of the Low dose.
+		\item \textbf{The generated X-ray should conform to the current user request. For instance, if during a High dose, the request LowFrontOn, LowFrontOff occur then there should be no Low dose after the end of the High dose. Similarly, if while finishing a sequence of Low dose images, the requests StartOneHigh, StopOneHigh should not lead to High dose after the end of the Low dose.}
 			\begin{align*}
 				&(\LTLG !\errorany) \imply !\LTLF (\dosehigh \land !\lowmode \land \textrm{i.signal = LowFrontOn} \land (\dosehigh \land !\lowmode \land \textrm{i.signal = LowFrontOn}) \LTLU ( \\
 				&	\hspace{1em}\dosehigh \land !\lowsignal \land (\dosehigh \land !\lowsignal) \LTLU ( \\
@@ -151,13 +151,13 @@
 				&))))))
 			\end{align*}
 
-		\item After a request for High (Sequence or One), no other High request can result in a High dose until all requests are released. In other words, only the first High request can result in High dose and only when that request has been finished (and there are no other pending High requests) a new request can result in a High dose.
+		\item \textbf{After a request for High (Sequence or One), no other High request can result in a High dose until all requests are released. In other words, only the first High request can result in High dose and only when that request has been finished (and there are no other pending High requests) a new request can result in a High dose.}
 			\begin{align*}
 				(\LTLG !\errorany) \imply \LTLG &((\dosehighseq \land (\LTLF \textrm{instr = StopSeqHigh}) \imply (\dosehighseq \LTLU \textrm{instr = StopSeqHigh})) \land \\
 					&(\dosehighone \land (\LTLF \textrm{instr = StopOneHigh}) \imply (\dosehighone \LTLU \textrm{instr = StopOneHigh})))
 			\end{align*}
 
-		\item Once a Low dose (on any Xplane) has been requested, no other Low request can result in a Low dose before all requests are released. In other words, only the Low request can result in a Low dose and only when that request has been finished (and there are no other pending Low requests) a new request can result in a Low dose.
+		\item \textbf{Once a Low dose (on any Xplane) has been requested, no other Low request can result in a Low dose before all requests are released. In other words, only the Low request can result in a Low dose and only when that request has been finished (and there are no other pending Low requests) a new request can result in a Low dose.}
 			\begin{align*}
 				&(\LTLG !\errorany) \imply \LTLG (\textrm{instr = LowFrontOn} \land !\dosehigh \imply \LTLF (\doselow \land \textrm{o.direction = Front})) \land \\
 				&	\hspace{1em}(\textrm{instr = LowSideOn} \land !\dosehigh \imply \LTLF (\doselow \land \textrm{o.direction = Side})) \land \\
@@ -167,7 +167,7 @@
 				&	\hspace{1em}(\textrm{instr = LowBothOn} \land (\LTLF \textrm{i.signal = LowBothOff}) \imply (\textrm{instr} \notin \{\textrm{LowFrontOn, LowSideOn}\} \LTLU \textrm{i.signal = LowBothOff}))
 			\end{align*}
 
-		\item Requests for High dose have priority above Low dose requests.
+		\item \textbf{Requests for High dose have priority above Low dose requests.}
 			\begin{align*}
 				(\LTLG !\errorany) \imply \LTLG &(\textrm{o.direction = Front} \land \doselow \land (\LTLF \textrm{instr} \in \{\textrm{StartSeqHigh, StartOneHigh}\}) \land \\
 					&	\hspace{1em}(!\LTLF \textrm{instr = LowFrontOff}) \imply \LTLF \dosehigh) \land \\
@@ -177,35 +177,44 @@
 					&	\hspace{1em}(!\LTLF \textrm{instr = LowBothOff}) \imply \LTLF \dosehigh)
 			\end{align*}
 
-		\item A High request (PrepSeqHigh or StartOneHigh) without an error interrupts any Low dose. After this end of such a High dose interrupt, an interrupted Low request or a new pending Low request may continue.
+		\item \textbf{A High request (PrepSeqHigh or StartOneHigh) without an error interrupts any Low dose. After this end of such a High dose interrupt, an interrupted Low request or a new pending Low request may continue.}
 			\begin{align*}
 				\LTLG & (\doselow \land \textrm{instr = StartSeqHigh} \land (!\errorhigh \LTLU \textrm{instr = StopSeqHigh}) \imply (\doselow \LTLU \dosehigh \LTLU \doselow)) \land \\
 					&(\doselow \land \textrm{instr = StartOneHigh} \land (!\errorhigh \LTLU \textrm{instr = StopOneHigh}) \imply (\doselow \LTLU \dosehigh \LTLU \doselow))
 			\end{align*}
 
-		\item A High dose (prepare or start) is never interrupted by a Low dose request.
+		\item \textbf{A High dose (prepare or start) is never interrupted by a Low dose request.}
 			\begin{align*}
 				(\LTLG !\errorany) \imply \LTLG & (\dosehighseq \land \lowsignal \land (\LTLF \textrm{i.signal = StopSeqHigh}) \imply (\textrm{o.dose} \neq \textrm{Low} \LTLU \textrm{i.signal = StopSeqHigh})) \land \\
 					& (\dosehighone \land \lowsignal \land (\LTLF \textrm{i.signal = StopOneHigh}) \imply (\textrm{o.dose} \neq \textrm{Low} \LTLU \textrm{i.signal = StopOneHigh}))
 			\end{align*}
 	
-		\item The system is not prepared or a dose is started if there is an error for the corresponding type and Xplane.
-		\item For Low dose a degraded mode is used in case of an error, that is, if Xplane Both is requested then
+		\item \textbf{The system is not prepared or a dose is started if there is an error for the corresponding type and Xplane.}
+		\item \textbf{For Low dose a degraded mode is used in case of an error, that is, if Xplane Both is requested then}
 			\begin{enumerate}
 				\item only Xplane Front is used if SideLowError holds;
 				\item only Xplane Side is used if FrontLowError holds.
 			
 			\end{enumerate}
-		\item There is no degraded mode for High dose; if there is an error on one the Xplanes no High dose should be generated.
-		\item For a request it is checked only once whether an error exists; if there an error, the request is discarded. The exception is an interrupted Low dose; then the error condition is checked again when the Low dose may resume.
+		\item \textbf{There is no degraded mode for High dose; if there is an error on one the Xplanes no High dose should be generated.}
+		\item \textbf{For a request it is checked only once whether an error exists; if there an error, the request is discarded.
+			The exception is an interrupted Low dose; then the error condition is checked again when the Low dose may resume.}
+			
+			It is inconsistent to disregard signals in case of an error, because the system may only be re-enabled when the corresponding Off-signal is received.
+			In the system the signal is processed, but the corresponding part of the machine is blocked.
+			This should result in no corresponding dose being generated.
 		\item
-			When an error occurs during the generation of X-ray for the corresponding type (independent of the Xplane), then any X-ray of that type is stopped immediately.
+			\textbf{When an error occurs during the generation of X-ray for the corresponding type (independent of the Xplane), then any X-ray of that type is stopped immediately.
 			A new generation of this type of dose may only occur when all requests for that type have been released and there is no error.
 			For instance, High dose X-ray on Front is stopped when SideHighError occurs.
-			High dose may only be generated when all High requests are released an all High errors have been resolved.
-		\item It should not be possible to select an erroneous Xplane for High dose.
-			In the actual system the user would receive a notice, that the selected Xplane does not work.
-			Because we do not have to implement this notice (mail with Jozef from 2013-06-23), this requirement does not say anything about our model.
+			High dose may only be generated when all High requests are released an all High errors have been resolved.}
+			
+			The last remark is in conflict with that HighFront should still function in case of a HighSideError.
+			Thus it is disregarded.
+		\item	\textbf{It should not be possible to select an erroneous Xplane for High dose.}
+			
+			In this case the actual system would send the user a notice, that the selected Xplane does not work.
+			Because we do not have to implement this notice (see our mail with Jozef from 2013-06-23), this requirement does not say anything about our model.
 			Thus we did not implement this LTLSPEC.
 	\end{enumerate}
 	
