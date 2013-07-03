@@ -202,12 +202,14 @@ MODULE main
 		
 		next(high_front_blocked) := case
 				e.FrontHighError : TRUE;
+				dose_high & error_high : TRUE; -- requirement 14, when high_dose and an error, block all
 				!high_single_mode & !high_sequential_mode : FALSE;
 				TRUE : high_front_blocked;
 		esac;
 
 		next(high_side_blocked) := case
 				e.SideHighError : TRUE;
+				dose_high & error_high : TRUE; -- requirement 14, when high_dose and an error, block all
 				!high_single_mode & !high_sequential_mode : FALSE;
 				TRUE : high_side_blocked;
 		esac;
@@ -298,6 +300,7 @@ MODULE main
 			(e.SideLowError -> low_side_blocked) &
 			(e.FrontHighError -> high_front_blocked) &
 			(e.SideHighError -> high_side_blocked) &
+			(dose_high & error_high -> high_front_blocked & high_side_blocked) & -- requirement 14, when high_dose and an error, block all
 			
 			(!e.FrontLowError & !low_mode -> !low_front_blocked) &
 			(!e.SideLowError & !low_mode -> !low_side_blocked) &
@@ -465,20 +468,19 @@ MODULE main
 	--LTLSPEC (G !error_any) -> G (dose_highone & low_signal & (F i.signal = StopOneHigh) -> (o.dose != Low U i.signal = StopOneHigh))
 
 	-- Error requirement 10
-	LTLSPEC G (!o.prepared & error_high & (F !error_high) -> (!o.prepared U !error_high))
-	LTLSPEC G (i.signal = LowFrontOn & e.FrontLowError & (F !e.FrontLowError) -> (!(dose_low & o.direction = Front) U !e.FrontLowError))
-	LTLSPEC G (e.SideLowError & i.signal = LowSideOn -> !signal_valid)
-	LTLSPEC G (error_low & i.signal = LowBothOn -> !signal_valid)
-	LTLSPEC G (e.FrontHighError -> !o.prepared & !dose_high)
-	LTLSPEC G (e.SideHighError -> !o.prepared & !dose_high)
+	--LTLSPEC G (!o.prepared & error_high & (F !error_high) -> (!o.prepared U !error_high))
+	LTLSPEC G (dose_no & i.signal = LowFrontOn & e.FrontLowError & (F !e.FrontLowError) -> (dose_no U !e.FrontLowError))
+	LTLSPEC G (dose_no & i.signal = LowSideOn & e.SideLowError & (F !e.SideLowError) -> (!(dose_low & o.direction = Side) U !e.SideLowError))
+	LTLSPEC G (dose_no & i.signal = LowBothOn & error_low & (F !error_low) -> (!(dose_low & o.direction = Both) U !error_low))
+	LTLSPEC G (i.signal = StartSeqHigh & error_high & (F !error_high) -> (!dose_highseq U !error_high))
+	LTLSPEC G (i.signal = StartOneHigh & error_high & (F !error_high) -> (!dose_highone U !error_high))
 
 	-- Error requirement 11
-	LTLSPEC G (low_direction = Both & e.FrontHighError -> (dose_low -> o.direction = Side))
-	LTLSPEC G (low_direction = Both & e.SideHighError -> (dose_low -> o.direction = Front))
+	LTLSPEC G (dose_no & instr = LowBothOn & e.FrontLowError -> F(o.direction = Side))
+	LTLSPEC G (dose_low & o.direction = Both & e.SideLowError -> F(o.direction = Front))
 
 	-- Error requirement 12
-	LTLSPEC G (e.FrontHighError -> !dose_high)
-	LTLSPEC G (e.SideHighError -> !dose_high)
+	LTLSPEC G (dose_high & error_high -> F(dose_no))
 
 	-- Error requirement 13
 	LTLSPEC G (e.FrontLowError & i.signal = LowFrontOn -> X instr != LowFrontOn)
@@ -494,6 +496,11 @@ MODULE main
 	--LTLSPEC G (instr = StopSeqHigh & dose_high ???
 
 	-- Error requirement 14
-	--???
+	LTLSPEC G (o.direction = Front & dose_high & (e.FrontHighError | e.SideHighError) -> F !dose_high)
+	LTLSPEC G (o.direction = Side & dose_high & (e.FrontHighError | e.SideHighError) -> F !dose_high)
+	LTLSPEC G (o.direction in {Front, DegradedFront} & dose_low & e.FrontLowError -> F !dose_low)
+	LTLSPEC G (o.direction in {Side, DegradedSide} & dose_low & e.SideLowError -> F !dose_low)
+	LTLSPEC G (o.direction = Both & dose_low & (e.FrontLowError | e.SideLowError) -> F !dose_low)
+	
 	-- Error requirement 15
-	--???
+	-- Due to abstraction not relevant, see report
