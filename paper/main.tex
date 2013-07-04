@@ -191,7 +191,7 @@
 				\hspace{-8em}	& (\dosehighone \land \lowsignal \land (\LTLF \textrm{i.signal = StopOneHigh}) \imply (\textrm{o.dose} \neq \textrm{Low} \LTLU \textrm{i.signal = StopOneHigh}))
 			\end{align*}
 
-		\item \textbf{The system is not prepared or a dose is started if there is an error for the corresponding type and Xplane.} %TODO KLOPT NOG NIET?
+		\item \textbf{The system is not prepared or a dose is started if there is an error for the corresponding type and Xplane.}
 			\begin{align*}
 				\LTLG &(!\textrm{o.prepared} \land \errorhigh \land (\LTLF !\errorhigh) \\
 				&\hspace{1em}	\imply (!\textrm{o.prepared} \LTLU !\errorhigh)) \land \\
@@ -201,18 +201,18 @@
 				&\hspace{1em}	\imply (!(\textrm{o.direction = Side} \land \doselow) \LTLU !\textrm{e.SideLowError})) \land \\
 				& (\doseno \land \textrm{i.signal = LowBothOn} \land \errorlow \land (\LTLF !\errorlow) \\
 				&\hspace{1em}	\imply (!(\textrm{o.direction = Both} \land \doselow) \LTLU !\errorlow)) \land \\
-				& (\textrm{i.signal = StartSeqHigh} \land \textrm{next\_direction = Front} \land \textrm{e.FrontHighError} \land (\LTLF !\textrm{e.FrontHighError}) \\
-				&\hspace{1em}	\imply (!(\dosehighseq \land \textrm{o.direction = Front}) \LTLU !\textrm{e.FrontHighError})) \land \\
-				& (\textrm{i.signal = StartSeqHigh} \land \textrm{next\_direction = Side} \land \textrm{e.SideHighError} \land (\LTLF !\textrm{e.SideHighError}) \\
-				&\hspace{1em}	\imply (!(\dosehighseq \land \textrm{o.direction = Side}) \LTLU !\textrm{e.SideHighError})) \land \\
-				& (\textrm{i.signal = StartSeqHigh} \land \textrm{next\_direction = Both} \land \errorhigh \land (\LTLF !\errorhigh) \\
-				&\hspace{1em}	\imply (!(\dosehighseq \land \textrm{o.direction = Both}) \LTLU !\errorhigh)) \land \\
-				& (\textrm{i.signal = StartOneHigh} \land \textrm{next\_direction = Front} \land \textrm{e.FrontHighError} \land (\LTLF !\textrm{e.FrontHighError}) \\
-				&\hspace{1em}	\imply (!(\dosehighone \land \textrm{o.direction = Front}) \LTLU !\textrm{e.FrontHighError})) \land \\
-				& (\textrm{i.signal = StartOneHigh} \land \textrm{next\_direction = Side} \land \textrm{e.SideHighError} \land (\LTLF !\textrm{e.SideHighError}) \\
-				&\hspace{1em}	\imply (!(\dosehighone \land \textrm{o.direction = Side}) \LTLU !\textrm{e.SideHighError})) \land \\
-				& (\textrm{i.signal = StartOneHigh} \land \textrm{next\_direction = Both} \land \errorhigh \land (\LTLF !\errorhigh) \\
-				&\hspace{1em}	\imply (!(\dosehighone \land \textrm{o.direction = Both}) \LTLU !\errorhigh))
+				& (!\dosehigh \land \textrm{i.signal = StartSeqHigh} \land \textrm{next\_direction = Front} \land \textrm{e.FrontHighError} \\
+				&\hspace{1em}	\land (\LTLF !\textrm{e.FrontHighError}) \imply (!(\dosehighseq \land \textrm{o.direction = Front}) \LTLU !\textrm{e.FrontHighError})) \land \\
+				& (!\dosehigh \land \textrm{i.signal = StartSeqHigh} \land \textrm{next\_direction = Side} \land \textrm{e.SideHighError}\\
+				&\hspace{1em}	\land (\LTLF !\textrm{e.SideHighError}) \imply (!(\dosehighseq \land \textrm{o.direction = Side}) \LTLU !\textrm{e.SideHighError})) \land \\
+				& (!\dosehigh \land \textrm{i.signal = StartSeqHigh} \land \textrm{next\_direction = Both} \land \errorhigh \\
+				&\hspace{1em}	\land (\LTLF !\errorhigh) \imply (!(\dosehighseq \land \textrm{o.direction = Both}) \LTLU !\errorhigh)) \land \\
+				& (!\dosehigh \land \textrm{i.signal = StartOneHigh} \land \textrm{next\_direction = Front} \land \textrm{e.FrontHighError} \\
+				&\hspace{1em}	\land (\LTLF !\textrm{e.FrontHighError}) \imply (!(\dosehighone \land \textrm{o.direction = Front}) \LTLU !\textrm{e.FrontHighError})) \land \\
+				& (!\dosehigh \land \textrm{i.signal = StartOneHigh} \land \textrm{next\_direction = Side} \land \textrm{e.SideHighError} \\
+				&\hspace{1em}	\land (\LTLF !\textrm{e.SideHighError}) \imply (!(\dosehighone \land \textrm{o.direction = Side}) \LTLU !\textrm{e.SideHighError})) \land \\
+				& (!\dosehigh \land \textrm{i.signal = StartOneHigh} \land \textrm{next\_direction = Both} \land \errorhigh \\
+				&\hspace{1em}	\land (\LTLF !\errorhigh) \imply (!(\dosehighone \land \textrm{o.direction = Both}) \LTLU !\errorhigh))
 			\end{align*}
 		\item \textbf{For Low dose a degraded mode is used in case of an error, that is, if Xplane Both is requested then}
 			\begin{enumerate}
